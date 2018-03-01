@@ -1,0 +1,74 @@
+Docker部署Tomcat及Web应用
+
+一、在线下载docker
+
+yum install -y epel-release
+
+yum install docker-io   # 安装docker
+
+chkconfig docker on     # 加入开机启动
+
+service docker start     # 启动docker服务
+
+二、docker安装Tomcat容器
+
+1、查找服务器的tomcat信息
+docker search tomcat 
+2、下载下来官方的镜像Starts最高的那个
+docker pull  docker.io/tomcat    
+3、查看docker所有的镜像
+docker images
+4、启动tomcat
+docker run -p 8081:8080 docker.io/tomcat #  若端口被占用，可以指定容器和主机的映射端口 前者是外围访问端口：后者是容器内部端口
+5、启动后即可访问192.168.x.x:8080
+
+三、部署自己的web引用
+
+docker ps     # 使用以下命令来查看正在运行的容器
+1、将自己的war包 上传到主机
+
+2、查看容器tomcat中的地址
+docker  exec -it   3cb492a27475   /bin/bash    #中间那个是容器id（CONTAINER_ID）
+
+3、先将war包上传到主机 然后再传入container里面放置进tomcat/webapps目录
+docker cp SpiderDemo.war 3cb492a27475 :/usr/local/tomcat/webapps
+
+4、启动tomcat 或者重启 docker restart 【容器id】
+docker run -p 8081:8080 docker.io/tomcat
+
+5、查看已经启动镜像
+docker ps
+
+6、查看容器tomcat中的项目
+docker  exec -it   3cb492a27475   /bin/bash    #中间那个是容器id（CONTAINER_ID） 
+
+cd /webapps
+
+ls   # 即可查看到部署好的项目了
+
+四、第二种容器部署方式，挂载部署（因为方法三容器重启后项目就不在了，挂载启动不会受影响）
+
+1、执行以下指令即可
+docker run -d -v /usr/docker_file/SpiderDemo.war:/usr/local/tomcat/webapps/SpiderDemo.war -p 8080:8080 docker.io/tomcat 
+
+五、生成新的镜像的方式（以上两种为测试环境推荐使用，生产环境使用这一种，产生一个新的镜像）
+1、修改Dockerfile文件
+vim Dockerfile
+
+from docker.io/tomcat:latest    #你的 tomcat的镜像
+MAINTAINER XXX@qq.com    #作者
+COPY SpiderDemo.war   /usr/local/tomcat/webapps  #放置到tomcat的webapps目录下
+
+2、生成新的镜像
+docker build -t spider-demo(你的web项目名称):v1
+
+3、启动新的镜像
+docker run -p 8080:8080 spider-demo:v1
+
+
+其他
+
+# 基本信息查看 docker version
+# 查看docker的版本号，包括客户端、服务端、依赖的Go等 docker info  
+# 查看系统(docker)层面信息，包括管理的images, containers数等
+
